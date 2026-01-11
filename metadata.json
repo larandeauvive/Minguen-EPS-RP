@@ -1,0 +1,7 @@
+{
+  "name": "Minguen EPS",
+  "description": "Une application mobile-first complète pour l'enseignement de l'EPS, permettant le suivi en temps réel des performances, la gestion des classes et l'observation des élèves.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
