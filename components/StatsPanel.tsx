@@ -47,17 +47,18 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ selectedSport, classes, sheets,
     if (type === 'counter') {
       let sum = 0;
       studentResults.forEach(r => sum += (r.data[obsId] || 0));
-      return { main: sum, sub: null };
+      return { type: 'counter', value: sum };
     }
 
     if (type === 'timer') {
       let total = 0;
       studentResults.forEach(r => total += (r.data[obsId] || 0));
-      return { main: `${total}s`, sub: studentResults.length > 0 ? `Avg: ${(total/studentResults.length).toFixed(1)}s` : null };
+      const avg = studentResults.length > 0 ? (total / studentResults.length).toFixed(1) : "0";
+      return { type: 'timer', total, avg };
     }
 
     if (type === 'categorical' && options) {
-      let counts: Record<string, number> = {};
+      const counts: Record<string, number> = {};
       options.forEach(o => counts[o] = 0);
       
       studentResults.forEach(r => {
@@ -67,27 +68,22 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ selectedSport, classes, sheets,
         });
       });
 
-      const total = Object.values(counts).reduce((a, b) => a + b, 0);
-      // On définit arbitrairement la réussite comme la première option si "Réussi" ou "But", 
-      // ou on cherche des mots clés. Par défaut on prend l'option 1 vs le reste si 2 options.
-      const successKey = options.find(o => 
-        o.toLowerCase().includes('réussi') || 
-        o.toLowerCase().includes('but') || 
-        o.toLowerCase().includes('cadré') ||
-        o.toLowerCase().includes('oui')
-      ) || options[0];
-
-      const successCount = counts[successKey] || 0;
-      const pct = total > 0 ? Math.round((successCount / total) * 100) : 0;
+      const totalAttempts = Object.values(counts).reduce((a, b) => a + b, 0);
+      
+      const breakdown = options.map(opt => ({
+        label: opt,
+        count: counts[opt],
+        pct: totalAttempts > 0 ? Math.round((counts[opt] / totalAttempts) * 100) : 0
+      }));
 
       return { 
-        main: `${pct}%`, 
-        sub: `${successCount}/${total}`,
-        details: counts 
+        type: 'categorical', 
+        breakdown, 
+        totalAttempts 
       };
     }
 
-    return { main: '-', sub: null };
+    return { type: 'none' };
   };
 
   return (
@@ -95,7 +91,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ selectedSport, classes, sheets,
       <div className="p-8 border-b bg-slate-50 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h3 className="text-2xl font-black text-slate-900">📊 Statistiques de Classe</h3>
-          <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mt-1">Analyse des performances en temps réel</p>
+          <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mt-1">Ventilation détaillée par option et critère</p>
         </div>
         <select 
           value={selectedClassId} 
@@ -110,19 +106,19 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ selectedSport, classes, sheets,
       {!selectedClassId ? (
         <div className="p-20 text-center">
           <div className="text-6xl mb-4 opacity-20">📈</div>
-          <p className="text-slate-400 font-bold italic">Veuillez sélectionner une classe pour afficher le bilan des compétences.</p>
+          <p className="text-slate-400 font-bold italic">Veuillez sélectionner une classe pour afficher le bilan analytique.</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-100">
-                <th className="p-6 font-black text-[10px] uppercase tracking-widest text-slate-500 border-b sticky left-0 bg-slate-100 z-10">Élève</th>
+                <th className="p-6 font-black text-[10px] uppercase tracking-widest text-slate-500 border-b sticky left-0 bg-slate-100 z-10 shadow-[2px_0_5px_rgba(0,0,0,0.05)]">Élève</th>
                 {allCriteria.map((c, i) => (
-                  <th key={i} className="p-6 font-black text-[10px] uppercase tracking-widest text-slate-500 border-b text-center min-w-[120px]">
+                  <th key={i} className="p-6 font-black text-[10px] uppercase tracking-widest text-slate-500 border-b text-center min-w-[200px] border-l">
                     <div className="text-indigo-600 mb-1">{c.sheetTitle}</div>
-                    <div className="text-slate-900">{c.critLabel}</div>
-                    <div className="text-[8px] opacity-60 mt-1">{c.obsLabel}</div>
+                    <div className="text-slate-900 text-[11px] mb-1">{c.critLabel}</div>
+                    <div className="text-[8px] font-medium opacity-50 bg-white inline-block px-2 py-0.5 rounded-full border">{c.obsLabel}</div>
                   </th>
                 ))}
               </tr>
@@ -130,18 +126,55 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ selectedSport, classes, sheets,
             <tbody>
               {targetClass?.students.slice().sort((a,b) => a.lastName.localeCompare(b.lastName)).map(student => (
                 <tr key={student.id} className="border-b hover:bg-slate-50 transition">
-                  <td className="p-6 font-black text-xs text-slate-700 sticky left-0 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
-                    {student.lastName} <span className="font-medium opacity-60">{student.firstName}</span>
+                  <td className="p-6 font-black text-xs text-slate-700 sticky left-0 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.02)] z-10">
+                    <div className="truncate w-32 uppercase">{student.lastName}</div>
+                    <div className="font-medium opacity-50 capitalize text-[10px]">{student.firstName}</div>
                   </td>
                   {allCriteria.map((c, i) => {
                     const stats = getStudentStats(student.id, c.obsId, c.type, c.options);
+                    
                     return (
-                      <td key={i} className="p-6 text-center">
-                        <div className="font-black text-lg text-slate-900">{stats.main}</div>
-                        {stats.sub && (
-                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-1">
-                            ({stats.sub})
+                      <td key={i} className="p-4 border-l align-top">
+                        {stats.type === 'categorical' && stats.breakdown && (
+                          <div className="space-y-1.5">
+                            {stats.breakdown.map((item, idx) => (
+                              <div key={idx} className="flex flex-col">
+                                <div className="flex justify-between items-center text-[10px] mb-0.5">
+                                  <span className="font-bold text-slate-500 uppercase tracking-tighter truncate pr-1">{item.label}</span>
+                                  <span className="font-black text-indigo-600 whitespace-nowrap">
+                                    {item.pct}% <span className="text-slate-300 font-bold ml-0.5">({item.count})</span>
+                                  </span>
+                                </div>
+                                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-indigo-500 transition-all duration-500" 
+                                    style={{ width: `${item.pct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                            <div className="text-[8px] font-black text-slate-300 uppercase text-right pt-1">
+                              Total: {stats.totalAttempts} actions
+                            </div>
                           </div>
+                        )}
+
+                        {stats.type === 'counter' && (
+                          <div className="text-center py-2">
+                            <div className="text-2xl font-black text-slate-900 leading-none">{stats.value}</div>
+                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Actions</div>
+                          </div>
+                        )}
+
+                        {stats.type === 'timer' && (
+                          <div className="text-center py-2">
+                            <div className="text-xl font-black text-slate-900 leading-none">{stats.total}s</div>
+                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Moy: {stats.avg}s</div>
+                          </div>
+                        )}
+
+                        {stats.type === 'none' && (
+                          <div className="text-center py-2 text-slate-200 font-black text-xs">--</div>
                         )}
                       </td>
                     );
