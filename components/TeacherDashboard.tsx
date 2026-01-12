@@ -82,7 +82,6 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     setView('class-detail');
   };
 
-  // --- LOGIQUE SÉANCES & OBSERVATIONS ---
   const handleCreateSheet = () => {
     if (!selectedSport || !newSheetTitle) return;
     const sheet: ObservationSheet = {
@@ -99,7 +98,6 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     setNewSheetTitle(''); setNewCriteria([]); setNewPhases([]);
   };
 
-  // --- ACTIONS DIVERSES ---
   const handleAddSport = () => {
     const name = prompt("Nom de l'activité ?");
     const icon = prompt("Icône Emoji ?", "🏃");
@@ -125,14 +123,12 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   return (
     <div className="space-y-6 pb-24 animate-in fade-in duration-300">
-      {/* Onglets Principaux */}
       <div className="flex gap-2 bg-slate-200 p-1 rounded-2xl w-fit">
         {['sports', 'classes', 'logiciels'].map(t => (
           <button key={t} onClick={() => { setMainTab(t as any); setView('list'); }} className={`px-6 py-2 rounded-xl font-black capitalize transition ${mainTab === t ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}>{t}</button>
         ))}
       </div>
 
-      {/* CONTENU : SPORTS & FICHES */}
       {mainTab === 'sports' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
@@ -185,7 +181,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               
               {newSheetMode === 'MULTI_CRITERIA' ? (
                 <div className="space-y-4">
-                  <button onClick={() => setNewCriteria([...newCriteria, { id: `c-${Date.now()}`, label: 'Nouveau Groupe', observables: [] }])} className="bg-indigo-50 text-indigo-600 px-6 py-3 rounded-2xl font-black">+ Ajouter un Groupe de Critères</button>
+                  <button onClick={() => setNewCriteria([...newCriteria, { id: `c-${Date.now()}`, label: 'Nouveau Groupe', observables: [] }])} className="bg-indigo-50 text-indigo-600 px-6 py-3 rounded-2xl font-black">+ Ajouter un Groupe</button>
                   {newCriteria.map((crit, cIdx) => (
                     <div key={crit.id} className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 space-y-4">
                       <div className="flex justify-between items-center">
@@ -196,23 +192,20 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         {crit.observables.map((obs, oIdx) => (
                           <div key={obs.id} className="bg-white p-4 rounded-xl border space-y-3">
                              <div className="flex items-center justify-between">
-                               <input type="text" value={obs.label} onChange={(e) => { const n = [...newCriteria]; n[cIdx].observables[oIdx].label = e.target.value; setNewCriteria(n); }} className="font-bold border-b outline-none text-sm w-1/2" placeholder="Nom du critère (ex: Tir)..." />
-                               <select value={obs.type} onChange={(e) => { const n = [...newCriteria]; n[cIdx].observables[oIdx].type = e.target.value as any; if (e.target.value === 'categorical') n[cIdx].observables[oIdx].options = ['Raté', 'Cadré', 'Arrêté']; setNewCriteria(n); }} className="text-xs font-bold text-indigo-600 outline-none">
-                                 <option value="categorical">Boutons (Choix)</option>
-                                 <option value="counter">Compteur (+/-)</option>
-                                 <option value="timer">Chronomètre</option>
+                               <input type="text" value={obs.label} onChange={(e) => { const n = [...newCriteria]; n[cIdx].observables[oIdx].label = e.target.value; setNewCriteria(n); }} className="font-bold border-b outline-none text-sm w-1/2" placeholder="Critère (ex: Tir)..." />
+                               <select value={obs.type} onChange={(e) => { const n = [...newCriteria]; n[cIdx].observables[oIdx].type = e.target.value as any; if (e.target.value === 'categorical') n[cIdx].observables[oIdx].options = ['Réussi', 'Raté']; setNewCriteria(n); }} className="text-xs font-bold text-indigo-600">
+                                 <option value="categorical">Boutons</option>
+                                 <option value="counter">Compteur</option>
+                                 <option value="timer">Chrono</option>
                                </select>
                                <button onClick={() => { const n = [...newCriteria]; n[cIdx].observables.splice(oIdx, 1); setNewCriteria(n); }} className="text-rose-300">✕</button>
                              </div>
                              {obs.type === 'categorical' && (
-                               <div className="space-y-2">
-                                 <label className="text-[10px] font-black uppercase text-slate-400">Options (séparées par des virgules) :</label>
-                                 <input type="text" value={obs.options?.join(', ')} onChange={(e) => { const n = [...newCriteria]; n[cIdx].observables[oIdx].options = e.target.value.split(',').map(s => s.trim()).filter(s => s !== ''); setNewCriteria(n); }} className="w-full text-xs p-2 bg-slate-50 border rounded-lg outline-none font-bold" placeholder="Raté, Cadré, But..." />
-                               </div>
+                               <input type="text" value={obs.options?.join(', ')} onChange={(e) => { const n = [...newCriteria]; n[cIdx].observables[oIdx].options = e.target.value.split(',').map(s => s.trim()); setNewCriteria(n); }} className="w-full text-xs p-2 bg-slate-50 border rounded-lg outline-none" placeholder="Options: Raté, Cadré, But..." />
                              )}
                           </div>
                         ))}
-                        <button onClick={() => { const n = [...newCriteria]; n[cIdx].observables.push({ id: `o-${Date.now()}`, label: 'Nouveau critère', type: 'categorical', options: ['Réussi', 'Raté'] }); setNewCriteria(n); }} className="border-2 border-dashed rounded-xl py-4 text-slate-400 font-bold text-xs hover:bg-white transition">+ Ajouter Élément</button>
+                        <button onClick={() => { const n = [...newCriteria]; n[cIdx].observables.push({ id: `o-${Date.now()}`, label: 'Nouveau', type: 'categorical', options: ['Réussi', 'Raté'] }); setNewCriteria(n); }} className="border-2 border-dashed rounded-xl py-4 text-slate-400 font-bold text-xs hover:bg-white transition">+ Ajouter Élément</button>
                       </div>
                     </div>
                   ))}
@@ -223,18 +216,18 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   {newPhases.map((phase, pIdx) => (
                     <div key={phase.id} className="bg-slate-50 p-6 rounded-[2rem] border border-amber-100 space-y-4">
                       <div className="flex justify-between items-center">
-                        <input type="text" value={phase.name} onChange={(e) => { const n = [...newPhases]; n[pIdx].name = e.target.value; setNewPhases(n); }} className="bg-transparent font-black text-xl border-b-2 text-amber-600 outline-none border-amber-200 focus:border-amber-500" placeholder="Nom de la phase..." />
+                        <input type="text" value={phase.name} onChange={(e) => { const n = [...newPhases]; n[pIdx].name = e.target.value; setNewPhases(n); }} className="bg-transparent font-black text-xl border-b-2 text-amber-600 outline-none" placeholder="Nom de la phase..." />
                         <button onClick={() => setNewPhases(newPhases.filter((_, i) => i !== pIdx))} className="text-rose-400 font-bold">✕</button>
                       </div>
                       <div className="space-y-3">
                         {phase.exercises.map((ex, eIdx) => (
                           <div key={ex.id} className="bg-white p-4 rounded-xl grid grid-cols-6 gap-2 items-center">
                             <input type="text" value={ex.name} onChange={(e) => { const n = [...newPhases]; n[pIdx].exercises[eIdx].name = e.target.value; setNewPhases(n); }} className="col-span-2 border-b font-bold text-xs outline-none" placeholder="Exercice" />
-                            <input type="text" value={ex.sets} onChange={(e) => { const n = [...newPhases]; n[pIdx].exercises[eIdx].sets = e.target.value; setNewPhases(n); }} className="border-b font-bold text-xs outline-none" placeholder="Séries" title="Séries" />
-                            <input type="text" value={ex.reps} onChange={(e) => { const n = [...newPhases]; n[pIdx].exercises[eIdx].reps = e.target.value; setNewPhases(n); }} className="border-b font-bold text-xs outline-none" placeholder="Reps" title="Répétitions" />
+                            <input type="text" value={ex.sets} onChange={(e) => { const n = [...newPhases]; n[pIdx].exercises[eIdx].sets = e.target.value; setNewPhases(n); }} className="border-b font-bold text-xs outline-none text-center" placeholder="Séries" />
+                            <input type="text" value={ex.reps} onChange={(e) => { const n = [...newPhases]; n[pIdx].exercises[eIdx].reps = e.target.value; setNewPhases(n); }} className="border-b font-bold text-xs outline-none text-center" placeholder="Reps" />
                             <div className="flex gap-1">
-                              <input type="text" value={ex.load} onChange={(e) => { const n = [...newPhases]; n[pIdx].exercises[eIdx].load = e.target.value; setNewPhases(n); }} className="w-full border-b font-bold text-xs outline-none" placeholder="Ch." title="Charge" />
-                              <input type="text" value={ex.unit} onChange={(e) => { const n = [...newPhases]; n[pIdx].exercises[eIdx].unit = e.target.value; setNewPhases(n); }} className="w-8 border-b font-bold text-[10px] outline-none opacity-50" placeholder="Unit." title="Unité (kg, m...)" />
+                              <input type="text" value={ex.load} onChange={(e) => { const n = [...newPhases]; n[pIdx].exercises[eIdx].load = e.target.value; setNewPhases(n); }} className="w-full border-b font-bold text-xs outline-none text-center" placeholder="Ch." />
+                              <input type="text" value={ex.unit} onChange={(e) => { const n = [...newPhases]; n[pIdx].exercises[eIdx].unit = e.target.value; setNewPhases(n); }} className="w-8 border-b font-bold text-[10px] outline-none opacity-50" placeholder="kg" />
                             </div>
                             <button onClick={() => { const n = [...newPhases]; n[pIdx].exercises.splice(eIdx, 1); setNewPhases(n); }} className="text-rose-300 text-right">✕</button>
                           </div>
@@ -251,7 +244,6 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         </div>
       )}
 
-      {/* CONTENU : CLASSES & IMPORT CSV */}
       {mainTab === 'classes' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
@@ -273,7 +265,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <button key={c.id} onClick={() => { setSelectedClass(c); setView('class-detail'); }} className="bg-white p-10 rounded-[2.5rem] shadow-sm border text-left group hover:border-indigo-400 transition">
                   <div className="text-4xl font-black text-slate-800">{c.name}</div>
                   <div className="text-xs font-bold text-indigo-500 mt-2 uppercase tracking-widest">Code: {c.code} • {c.students.length} Élèves</div>
-                  <button onClick={(e) => { e.stopPropagation(); setClasses(classes.filter(cl => cl.id !== c.id)); }} className="text-rose-400 text-xs mt-4 opacity-0 group-hover:opacity-100 transition">Supprimer la classe</button>
+                  <button onClick={(e) => { e.stopPropagation(); setClasses(classes.filter(cl => cl.id !== c.id)); }} className="text-rose-400 text-xs mt-4 opacity-0 group-hover:opacity-100 transition">Supprimer</button>
                 </button>
               ))}
             </div>
@@ -284,7 +276,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <div className="flex justify-between items-center border-b pb-8">
                 <div className="space-y-1">
                   <h3 className="text-3xl font-black">Listing de la classe</h3>
-                  <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Élèves inscrits : {selectedClass.students.length}</p>
+                  <p className="text-xs font-black uppercase text-slate-400 tracking-widest">Élèves : {selectedClass.students.length}</p>
                 </div>
                 <div className="flex gap-3">
                   <label className="bg-emerald-50 text-emerald-600 px-6 py-3 rounded-2xl font-black text-xs cursor-pointer flex items-center gap-2 hover:bg-emerald-100 transition shadow-sm">
@@ -300,7 +292,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {selectedClass.students.slice().sort((a,b) => a.lastName.localeCompare(b.lastName)).map(st => (
-                  <div key={st.id} className="bg-slate-50 p-4 rounded-2xl flex justify-between items-center group border border-transparent hover:border-indigo-100 transition">
+                  <div key={st.id} className="bg-slate-50 p-4 rounded-2xl flex justify-between items-center group border hover:border-indigo-100 transition">
                     <div className="font-bold text-slate-700 text-xs uppercase truncate pr-2">{st.lastName} {st.firstName}</div>
                     <button onClick={() => {
                       const updated = selectedClass.students.filter(s => s.id !== st.id);
@@ -315,42 +307,34 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
           {view === 'csv-mapping' && (
             <div className="bg-white p-12 rounded-[3rem] shadow-2xl max-w-2xl mx-auto space-y-10 animate-in zoom-in-95">
-              <div className="text-center">
-                <h3 className="text-4xl font-black text-indigo-900">Mapping CSV</h3>
-                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Associez vos colonnes pour l'import</p>
-              </div>
+              <h3 className="text-4xl font-black text-indigo-900 text-center">Mapping CSV</h3>
               <div className="space-y-6">
                 {[
-                  { label: 'COLONNE DES NOMS', key: 'lastName' },
-                  { label: 'COLONNE DES PRÉNOMS', key: 'firstName' },
-                  { label: 'COLONNE GENRE (F/M)', key: 'gender' }
+                  { label: 'NOM', key: 'lastName' },
+                  { label: 'PRÉNOM', key: 'firstName' },
+                  { label: 'GENRE (F/M)', key: 'gender' }
                 ].map(field => (
                   <div key={field.key} className="flex items-center justify-between bg-slate-50 p-6 rounded-3xl border">
-                    <span className="font-black text-slate-700 text-xs">{field.label}</span>
+                    <span className="font-black text-slate-700 text-xs uppercase tracking-widest">{field.label}</span>
                     <select 
                       className="bg-white border-2 border-indigo-50 p-3 rounded-xl text-xs font-bold w-1/2 outline-none focus:border-indigo-500"
                       onChange={(e) => setMapping(p => ({ ...p, [field.key]: parseInt(e.target.value) }))}
                     >
                       <option value="-1">-- Choisir --</option>
-                      {csvHeaders.map((h, i) => <option key={i} value={i}>{h || `Colonne ${i+1}`}</option>)}
+                      {csvHeaders.map((h, i) => <option key={i} value={i}>{h || `Col ${i+1}`}</option>)}
                     </select>
                   </div>
                 ))}
               </div>
-              <div className="bg-indigo-50 p-6 rounded-3xl">
-                <h4 className="text-[10px] font-black text-indigo-400 uppercase mb-2 tracking-widest">Aperçu première ligne de données :</h4>
-                <div className="text-xs font-bold text-indigo-900 truncate">
-                  {csvData[0]?.join(' | ')}
-                </div>
+              <div className="bg-indigo-50 p-6 rounded-3xl text-xs font-bold text-indigo-900 truncate">
+                Ligne 1 : {csvData[0]?.join(' | ')}
               </div>
-              <button onClick={finalizeCsvImport} className="w-full bg-indigo-600 text-white py-6 rounded-[2rem] font-black text-xl shadow-xl hover:bg-indigo-700 transition">Finaliser l'importation</button>
-              <button onClick={() => setView('class-detail')} className="w-full text-slate-400 font-bold text-xs uppercase">Annuler</button>
+              <button onClick={finalizeCsvImport} className="w-full bg-indigo-600 text-white py-6 rounded-[2rem] font-black text-xl shadow-xl hover:bg-indigo-700 transition">Finaliser</button>
             </div>
           )}
         </div>
       )}
 
-      {/* CONTENU : LOGICIELS */}
       {mainTab === 'logiciels' && (
         <div className="space-y-6 animate-in fade-in">
           <div className="flex justify-between items-center">
@@ -374,15 +358,11 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </div>
 
           {view === 'tool-run' && selectedTool && (
-            <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col animate-in fade-in">
-              <div className="bg-slate-800 p-4 flex justify-between items-center text-white border-b border-slate-700">
+            <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col">
+              <div className="bg-slate-800 p-4 flex justify-between items-center text-white">
                 <div className="flex items-center gap-6">
-                  <h3 className="font-black text-xl">{selectedTool.icon} {selectedTool.name}</h3>
-                  <select 
-                    value={toolRunClassId} 
-                    onChange={(e) => setToolRunClassId(e.target.value)}
-                    className="bg-slate-700 text-white text-xs font-bold p-2 rounded-lg outline-none border border-slate-600"
-                  >
+                  <h3 className="font-black text-xl">{selectedTool.name}</h3>
+                  <select value={toolRunClassId} onChange={(e) => setToolRunClassId(e.target.value)} className="bg-slate-700 text-xs p-2 rounded-lg">
                     <option value="">-- Injecter une classe --</option>
                     {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -391,44 +371,23 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </div>
               <div className="flex-1 bg-white relative">
                 {toolRunClassId ? (
-                  <iframe 
-                    srcDoc={`<!DOCTYPE html><html><body><script>window.students = ${JSON.stringify(classes.find(c => c.id === toolRunClassId)?.students || [])};</script>${selectedTool.contentHtml}</body></html>`} 
-                    className="absolute inset-0 w-full h-full border-none"
-                    title="Software Runner"
-                  ></iframe>
+                  <iframe srcDoc={`<!DOCTYPE html><html><body><script>window.students = ${JSON.stringify(classes.find(c => c.id === toolRunClassId)?.students || [])};</script>${selectedTool.contentHtml}</body></html>`} className="absolute inset-0 w-full h-full border-none" title="Runner"></iframe>
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-300">
-                    <div className="text-8xl mb-4 opacity-20">📊</div>
-                    <p className="font-black uppercase tracking-widest text-sm">Sélectionnez une classe pour charger le logiciel</p>
-                  </div>
+                  <div className="h-full flex items-center justify-center text-slate-300 font-black uppercase tracking-widest">Sélectionnez une classe</div>
                 )}
               </div>
             </div>
           )}
 
           {view === 'tool-edit' && selectedTool && (
-            <div className="bg-white p-10 rounded-3xl shadow-xl max-w-5xl mx-auto space-y-6 animate-in slide-in-from-bottom-4">
-              <div className="flex justify-between items-center"><h3 className="text-2xl font-black">Éditeur Logiciel HTML</h3><button onClick={() => setView('list')} className="text-slate-400 font-bold">Fermer</button></div>
-              <div className="grid grid-cols-2 gap-4">
-                <input type="text" value={selectedTool.name} onChange={(e) => setSelectedTool({ ...selectedTool, name: e.target.value })} className="p-4 border rounded-xl font-bold outline-none" placeholder="Nom du logiciel" />
-                <label className="bg-slate-50 border-2 border-dashed p-4 rounded-xl flex items-center justify-center cursor-pointer font-bold text-xs text-slate-400">
-                  📁 Charger un .html
-                  <input type="file" accept=".html" className="hidden" onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (ev) => setHtmlBuffer(ev.target?.result as string);
-                      reader.readAsText(file);
-                    }
-                  }} />
-                </label>
-              </div>
-              <textarea value={htmlBuffer} onChange={(e) => setHtmlBuffer(e.target.value)} className="w-full p-4 rounded-xl border font-mono text-xs bg-slate-900 text-emerald-400 outline-none h-[400px]" placeholder="Collez votre code HTML ici..." />
+            <div className="bg-white p-10 rounded-3xl shadow-xl max-w-5xl mx-auto space-y-6">
+              <div className="flex justify-between items-center"><h3 className="text-2xl font-black">Éditeur HTML</h3><button onClick={() => setView('list')} className="text-slate-400 font-bold">Fermer</button></div>
+              <textarea value={htmlBuffer} onChange={(e) => setHtmlBuffer(e.target.value)} className="w-full p-4 rounded-xl border font-mono text-xs bg-slate-900 text-emerald-400 h-[400px]" placeholder="Collez votre code HTML ici..." />
               <button onClick={() => { 
                 const exists = tools.find(t => t.id === selectedTool.id);
                 setTools(exists ? tools.map(t => t.id === selectedTool.id ? { ...selectedTool, contentHtml: htmlBuffer } : t) : [...tools, { ...selectedTool, contentHtml: htmlBuffer }]);
                 setView('list');
-              }} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xl shadow-lg hover:bg-indigo-700 transition">Sauvegarder le logiciel</button>
+              }} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xl">Sauvegarder</button>
             </div>
           )}
         </div>

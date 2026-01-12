@@ -3,15 +3,14 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-// Use environment variables or placeholders if not provided. 
-// For this demo, we assume the environment is set up.
 const firebaseConfig = {
-  apiKey: "DEMO_KEY",
-  authDomain: "minguen-eps.firebaseapp.com",
-  projectId: "minguen-eps",
-  storageBucket: "minguen-eps.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  // Fix: use process.env instead of import.meta.env for environment variables
+  apiKey: process.env.VITE_FIREBASE_API_KEY || "DEMO_KEY",
+  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "minguen-eps.firebaseapp.com",
+  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "minguen-eps",
+  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "minguen-eps.appspot.com",
+  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789",
+  appId: process.env.VITE_FIREBASE_APP_ID || "1:123456789:web:abcdef"
 };
 
 const app = initializeApp(firebaseConfig);
