@@ -13,7 +13,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, classes }) => {
   const [teacherPass, setTeacherPass] = useState('');
   const [selectedClassId, setSelectedClassId] = useState('');
   const [classCodeInput, setClassCodeInput] = useState('');
-  const [selectedStudentId, setSelectedStudentId] = useState('');
 
   const targetClass = useMemo(() => classes.find(c => c.id === selectedClassId), [classes, selectedClassId]);
 
@@ -30,13 +29,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, classes }) => {
     e.preventDefault();
     if (!targetClass) return;
     if (targetClass.code === classCodeInput) {
-      const student = targetClass.students.find(s => s.id === selectedStudentId);
-      if (student) {
-        onLogin({
-          user: { id: student.id, name: `${student.lastName} ${student.firstName}`, role: UserRole.STUDENT, gender: student.gender },
-          classId: selectedClassId
-        });
-      } else alert("Sélectionne ton nom.");
+      onLogin({
+        user: { 
+          id: `observer-${selectedClassId}`, 
+          name: `Observateur ${targetClass.name}`, 
+          role: UserRole.STUDENT 
+        },
+        classId: selectedClassId
+      });
     } else alert("Code de classe invalide.");
   };
 
@@ -62,7 +62,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, classes }) => {
             </form>
           ) : (
             <form onSubmit={handleStudentSubmit} className="space-y-4">
-              <select value={selectedClassId} onChange={e => { setSelectedClassId(e.target.value); setSelectedStudentId(''); }} className="w-full px-6 py-4 rounded-2xl border bg-slate-50 outline-none font-bold" required>
+              <select value={selectedClassId} onChange={e => setSelectedClassId(e.target.value)} className="w-full px-6 py-4 rounded-2xl border bg-slate-50 outline-none font-bold" required>
                 <option value="">-- Choisir ta classe --</option>
                 {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -70,10 +70,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, classes }) => {
               {selectedClassId && (
                 <div className="space-y-4 animate-in slide-in-from-bottom-4">
                   <input type="text" value={classCodeInput} onChange={e => setClassCodeInput(e.target.value)} className="w-full px-6 py-4 rounded-2xl border bg-slate-50 outline-none font-bold" placeholder="Code secret de classe" required />
-                  <select value={selectedStudentId} onChange={e => setSelectedStudentId(e.target.value)} className="w-full px-6 py-4 rounded-2xl border bg-slate-50 outline-none font-bold" required>
-                    <option value="">-- Trouve ton nom --</option>
-                    {targetClass?.students.slice().sort((a,b) => a.lastName.localeCompare(b.lastName)).map(s => <option key={s.id} value={s.id}>{s.lastName} {s.firstName}</option>)}
-                  </select>
                   <button className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-xl hover:bg-indigo-700 transition">ACCÉDER AUX FICHES</button>
                 </div>
               )}

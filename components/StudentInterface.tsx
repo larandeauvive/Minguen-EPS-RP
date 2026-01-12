@@ -14,12 +14,18 @@ interface StudentInterfaceProps {
 const StudentInterface: React.FC<StudentInterfaceProps> = ({ user, classId, sports, sheets, classes, onSaveResult }) => {
   const [selectedSportId, setSelectedSportId] = useState<string | null>(null);
   const [activeSheet, setActiveSheet] = useState<ObservationSheet | null>(null);
+  const [observedStudentId, setObservedStudentId] = useState<string>('');
   const [showRessources, setShowRessources] = useState(false);
   
   const [sessionData, setSessionData] = useState<Record<string, any>>({});
   const [timers, setTimers] = useState<Record<string, { start: number | null, elapsed: number }>>({});
 
   const selectedSport = useMemo(() => sports.find(s => s.id === selectedSportId), [sports, selectedSportId]);
+  const currentClass = useMemo(() => classes.find(c => c.id === classId), [classes, classId]);
+  const sortedStudents = useMemo(() => 
+    currentClass?.students.slice().sort((a, b) => a.lastName.localeCompare(b.lastName)) || [], 
+    [currentClass]
+  );
 
   useEffect(() => {
     let interval: any;
@@ -46,95 +52,133 @@ const StudentInterface: React.FC<StudentInterfaceProps> = ({ user, classId, spor
 
   const handleFinish = () => {
     if (!activeSheet) return;
+    if (!observedStudentId) {
+      alert('Veuillez sélectionner l\'élève observé avant de valider.');
+      return;
+    }
     const finalData = { ...sessionData };
     Object.keys(timers).forEach(id => { 
       finalData[id] = Math.round(timers[id].elapsed / 1000); 
     });
     onSaveResult({
-      id: `r-${Date.now()}`, studentId: user.id, classId, sheetId: activeSheet.id, sportId: activeSheet.sportId,
-      date: Date.now(), data: finalData
+      id: `r-${Date.now()}`, 
+      studentId: observedStudentId, 
+      classId, 
+      sheetId: activeSheet.id, 
+      sportId: activeSheet.sportId,
+      date: Date.now(), 
+      data: finalData
     });
     alert('Enregistrement réussi !');
-    setActiveSheet(null); setSessionData({}); setTimers({});
+    setActiveSheet(null); 
+    setSessionData({}); 
+    setTimers({});
+    setObservedStudentId('');
   };
 
   if (activeSheet) {
     return (
       <div className="max-w-2xl mx-auto space-y-6 pb-24 animate-in slide-in-from-bottom-6 duration-500">
-        <div className="bg-white p-6 rounded-3xl border flex items-center justify-between shadow-sm">
-           <button onClick={() => setActiveSheet(null)} className="bg-indigo-50 text-indigo-600 w-12 h-12 rounded-2xl font-black transition active:scale-90">←</button>
-           <h3 className="font-black text-xl truncate px-4">{activeSheet.title}</h3>
+        <div className="bg-white p-6 rounded-3xl border flex items-center justify-between shadow-sm sticky top-20 z-40">
+           <button onClick={() => { setActiveSheet(null); setObservedStudentId(''); }} className="bg-indigo-50 text-indigo-600 w-12 h-12 rounded-2xl font-black transition active:scale-90">←</button>
+           <div className="flex-1 px-4 min-w-0">
+             <h3 className="font-black text-xl truncate">{activeSheet.title}</h3>
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedSport?.name}</p>
+           </div>
            {selectedSport?.descriptionHtml ? (
              <button onClick={() => setShowRessources(!showRessources)} className="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase">Guide</button>
            ) : <div className="w-10"></div>}
+        </div>
+
+        {/* Sélecteur d'élève observé */}
+        <div className="bg-white p-6 rounded-3xl border shadow-sm space-y-3">
+          <label className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] ml-1">Élève observé :</label>
+          <select 
+            value={observedStudentId} 
+            onChange={(e) => setObservedStudentId(e.target.value)}
+            className="w-full px-6 py-4 rounded-2xl border-2 border-indigo-50 bg-slate-50 outline-none font-black text-slate-800 focus:border-indigo-500 transition"
+          >
+            <option value="">-- Choisir l'élève observé --</option>
+            {sortedStudents.map(s => (
+              <option key={s.id} value={s.id}>{s.lastName} {s.firstName}</option>
+            ))}
+          </select>
         </div>
 
         {showRessources && selectedSport?.descriptionHtml && (
           <div className="bg-emerald-50 p-6 rounded-[2.5rem] border border-emerald-100 prose prose-sm max-w-none animate-in fade-in" dangerouslySetInnerHTML={{ __html: selectedSport.descriptionHtml }}></div>
         )}
 
-        {activeSheet.mode === 'SESSION' ? (
-          <div className="space-y-6">
-            {activeSheet.phases?.map(phase => (
-              <div key={phase.id} className="bg-white p-8 rounded-[3rem] border shadow-sm space-y-4">
-                <h4 className="text-xl font-black text-amber-600 uppercase tracking-tighter border-b border-amber-50 pb-2">{phase.name}</h4>
-                {phase.exercises.map(ex => (
-                  <button key={ex.id} onClick={() => setSessionData(p => ({ ...p, [ex.id]: !p[ex.id] }))} className={`w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition ${sessionData[ex.id] ? 'bg-amber-50 border-amber-500 shadow-inner' : 'bg-white border-slate-100'}`}>
-                    <div className="text-left">
-                      <div className="font-black text-slate-800 uppercase text-xs">{ex.name}</div>
-                      <div className="text-[11px] font-bold text-slate-400 mt-2 flex gap-3 uppercase tracking-wider">
-                        <span>{ex.sets} séries</span>
-                        <span>{ex.reps} reps</span>
-                        {ex.load !== '0' && <span className="text-amber-600">{ex.load} {ex.unit}</span>}
-                      </div>
-                    </div>
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black transition ${sessionData[ex.id] ? 'bg-amber-500 text-white' : 'bg-slate-50 text-slate-200'}`}>{sessionData[ex.id] ? '✓' : ''}</div>
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {activeSheet.criteria.map(crit => (
-              <div key={crit.id} className="bg-white p-8 rounded-[3rem] border shadow-sm space-y-8">
-                <h4 className="text-2xl font-black border-b pb-4 text-slate-900">{crit.label}</h4>
-                {crit.observables.map(obs => (
-                  <div key={obs.id} className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{obs.label}</label>
-                    {obs.type === 'categorical' && (
-                      <div className="grid grid-cols-2 gap-3">
-                        {obs.options?.map(opt => (
-                          <button key={opt} onClick={() => setSessionData(p => { const c = p[obs.id] || {}; return { ...p, [obs.id]: { ...c, [opt]: (c[opt] || 0) + 1 } }; })} className="bg-slate-50 p-6 rounded-[2rem] font-bold flex justify-between active:scale-95 transition border hover:bg-white hover:border-indigo-200">
-                            <span className="text-sm truncate mr-2">{opt}</span>
-                            <span className="bg-indigo-600 text-white px-3 py-1 rounded-xl text-xs shadow-md">{sessionData[obs.id]?.[opt] || 0}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {obs.type === 'counter' && (
-                      <div className="bg-indigo-50 p-6 rounded-[2rem] flex items-center justify-between shadow-inner">
-                         <button onClick={() => setSessionData(p => ({ ...p, [obs.id]: Math.max(0, (p[obs.id] || 0) - 1) }))} className="bg-white w-14 h-14 rounded-2xl font-black text-2xl shadow-sm hover:bg-slate-50 transition active:scale-90">-</button>
-                         <span className="text-5xl font-black text-indigo-700">{sessionData[obs.id] || 0}</span>
-                         <button onClick={() => setSessionData(p => ({ ...p, [obs.id]: (p[obs.id] || 0) + 1 }))} className="bg-indigo-600 text-white w-14 h-14 rounded-2xl font-black text-2xl shadow-xl hover:bg-indigo-700 transition active:scale-90">+</button>
-                      </div>
-                    )}
-                    {obs.type === 'timer' && (
-                      <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] flex items-center justify-between shadow-2xl">
-                        <span className="text-4xl font-mono tracking-tighter">{( (timers[obs.id]?.elapsed || 0) / 1000).toFixed(1)}<span className="text-xl opacity-50 ml-1">s</span></span>
-                        <div className="flex gap-3">
-                          <button onClick={() => setTimers(p => ({ ...p, [obs.id]: { start: null, elapsed: 0 } }))} className="p-4 bg-slate-800 rounded-2xl hover:bg-slate-700 transition active:scale-90">↺</button>
-                          <button onClick={() => toggleTimer(obs.id)} className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition active:scale-95 ${timers[obs.id]?.start ? 'bg-rose-600 shadow-rose-900/50 shadow-lg' : 'bg-emerald-600 shadow-emerald-900/50 shadow-lg'}`}>{timers[obs.id]?.start ? 'Pause' : 'Start'}</button>
+        <div className={`${!observedStudentId ? 'opacity-30 pointer-events-none' : ''} transition-opacity duration-300`}>
+          {!observedStudentId && (
+            <div className="text-center bg-indigo-50/50 p-4 rounded-2xl text-[10px] font-bold text-indigo-400 uppercase mb-6">
+              Veuillez sélectionner un élève ci-dessus pour activer les contrôles
+            </div>
+          )}
+
+          {activeSheet.mode === 'SESSION' ? (
+            <div className="space-y-6">
+              {activeSheet.phases?.map(phase => (
+                <div key={phase.id} className="bg-white p-8 rounded-[3rem] border shadow-sm space-y-4">
+                  <h4 className="text-xl font-black text-amber-600 uppercase tracking-tighter border-b border-amber-50 pb-2">{phase.name}</h4>
+                  {phase.exercises.map(ex => (
+                    <button key={ex.id} onClick={() => setSessionData(p => ({ ...p, [ex.id]: !p[ex.id] }))} className={`w-full p-6 rounded-[2rem] border-2 flex items-center justify-between transition ${sessionData[ex.id] ? 'bg-amber-50 border-amber-500 shadow-inner' : 'bg-white border-slate-100'}`}>
+                      <div className="text-left">
+                        <div className="font-black text-slate-800 uppercase text-xs">{ex.name}</div>
+                        <div className="text-[11px] font-bold text-slate-400 mt-2 flex gap-3 uppercase tracking-wider">
+                          <span>{ex.sets} séries</span>
+                          <span>{ex.reps} reps</span>
+                          {ex.load !== '0' && <span className="text-amber-600">{ex.load} {ex.unit}</span>}
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-        <button onClick={handleFinish} className="w-full bg-indigo-600 text-white py-7 rounded-[2.5rem] font-black text-2xl shadow-2xl active:scale-95 transition-all hover:bg-indigo-700">VALIDER LES RÉSULTATS</button>
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black transition ${sessionData[ex.id] ? 'bg-amber-500 text-white' : 'bg-slate-50 text-slate-200'}`}>{sessionData[ex.id] ? '✓' : ''}</div>
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {activeSheet.criteria.map(crit => (
+                <div key={crit.id} className="bg-white p-8 rounded-[3rem] border shadow-sm space-y-8">
+                  <h4 className="text-2xl font-black border-b pb-4 text-slate-900">{crit.label}</h4>
+                  {crit.observables.map(obs => (
+                    <div key={obs.id} className="space-y-4">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{obs.label}</label>
+                      {obs.type === 'categorical' && (
+                        <div className="grid grid-cols-2 gap-3">
+                          {obs.options?.map(opt => (
+                            <button key={opt} onClick={() => setSessionData(p => { const c = p[obs.id] || {}; return { ...p, [obs.id]: { ...c, [opt]: (c[opt] || 0) + 1 } }; })} className="bg-slate-50 p-6 rounded-[2rem] font-bold flex justify-between active:scale-95 transition border hover:bg-white hover:border-indigo-200">
+                              <span className="text-sm truncate mr-2">{opt}</span>
+                              <span className="bg-indigo-600 text-white px-3 py-1 rounded-xl text-xs shadow-md">{sessionData[obs.id]?.[opt] || 0}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {obs.type === 'counter' && (
+                        <div className="bg-indigo-50 p-6 rounded-[2rem] flex items-center justify-between shadow-inner">
+                           <button onClick={() => setSessionData(p => ({ ...p, [obs.id]: Math.max(0, (p[obs.id] || 0) - 1) }))} className="bg-white w-14 h-14 rounded-2xl font-black text-2xl shadow-sm hover:bg-slate-50 transition active:scale-90">-</button>
+                           <span className="text-5xl font-black text-indigo-700">{sessionData[obs.id] || 0}</span>
+                           <button onClick={() => setSessionData(p => ({ ...p, [obs.id]: (p[obs.id] || 0) + 1 }))} className="bg-indigo-600 text-white w-14 h-14 rounded-2xl font-black text-2xl shadow-xl hover:bg-indigo-700 transition active:scale-90">+</button>
+                        </div>
+                      )}
+                      {obs.type === 'timer' && (
+                        <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] flex items-center justify-between shadow-2xl">
+                          <span className="text-4xl font-mono tracking-tighter">{( (timers[obs.id]?.elapsed || 0) / 1000).toFixed(1)}<span className="text-xl opacity-50 ml-1">s</span></span>
+                          <div className="flex gap-3">
+                            <button onClick={() => setTimers(p => ({ ...p, [obs.id]: { start: null, elapsed: 0 } }))} className="p-4 bg-slate-800 rounded-2xl hover:bg-slate-700 transition active:scale-90">↺</button>
+                            <button onClick={() => toggleTimer(obs.id)} className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition active:scale-95 ${timers[obs.id]?.start ? 'bg-rose-600 shadow-rose-900/50 shadow-lg' : 'bg-emerald-600 shadow-emerald-900/50 shadow-lg'}`}>{timers[obs.id]?.start ? 'Pause' : 'Start'}</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={handleFinish} className="w-full bg-indigo-600 text-white py-7 rounded-[2.5rem] font-black text-2xl shadow-2xl active:scale-95 transition-all hover:bg-indigo-700 mt-8">VALIDER LES RÉSULTATS</button>
+        </div>
       </div>
     );
   }
@@ -143,7 +187,7 @@ const StudentInterface: React.FC<StudentInterfaceProps> = ({ user, classId, spor
     <div className="max-w-2xl mx-auto space-y-10 animate-in fade-in">
       <div className="text-center space-y-1">
         <h2 className="text-4xl font-black text-indigo-950">Espace Fiches</h2>
-        <p className="text-[10px] font-black uppercase text-indigo-400 tracking-[0.4em]">Sélectionnez une activité</p>
+        <p className="text-[10px] font-black uppercase text-indigo-400 tracking-[0.4em]">Connecté en tant que {user.name}</p>
       </div>
 
       <div className="space-y-6">
