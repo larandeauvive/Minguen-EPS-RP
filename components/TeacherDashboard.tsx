@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Sport, ObservationSheet, ObservationMode, Criterion, ClassData, ObservationResult, SessionPhase, SoftwareTool, StudentRecord } from '../types';
+import StatsPanel from './StatsPanel';
 
 interface TeacherDashboardProps {
   sports: Sport[];
@@ -152,7 +153,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           )}
 
           {view === 'sport-detail' && selectedSport && (
-            <div className="space-y-6 animate-in slide-in-from-right-4">
+            <div className="space-y-10 animate-in slide-in-from-right-4">
               <div className="bg-white p-6 rounded-3xl border flex flex-wrap gap-4 items-center justify-between shadow-sm">
                 <h3 className="font-black text-xl">Gestion des Fiches</h3>
                 <div className="flex gap-2">
@@ -160,6 +161,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <button onClick={() => { setNewSheetMode('SESSION'); setView('create-sheet'); }} className="bg-amber-500 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase">+ Séance</button>
                 </div>
               </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sheets.filter(s => s.sportId === selectedSport.id).map(sheet => (
                   <div key={sheet.id} className="bg-white p-6 rounded-3xl border group shadow-sm flex flex-col justify-between">
@@ -171,6 +173,14 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   </div>
                 ))}
               </div>
+
+              {/* Nouveau Module Stats Panel */}
+              <StatsPanel 
+                selectedSport={selectedSport} 
+                classes={classes} 
+                sheets={sheets} 
+                results={results} 
+              />
             </div>
           )}
 
